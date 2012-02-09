@@ -1,1 +1,0 @@
-web: bundle exec ruby lib/smash_and_grab_server.rb -p $PORT
