@@ -1,0 +1,1 @@
+require_relative "lib/smash_and_grab_server"
