@@ -7,8 +7,7 @@ def initial_game_data
   {
      scenario: "01_Giant_chicken",
      initial: { data: "cheese" }.to_json,
-     player1: "fish",
-     player2: "frog",
+     players: "fish;frog",
      mode: "coop-baddies"
   }
 end
@@ -30,6 +29,22 @@ class String
 end
 
 describe 'Smash and Grab server' do 
+  before do
+    Player.delete_all
+    Game.delete_all # Turn is a part of a game.
+  end
+  
+  before do
+    Player.delete_all
+    Game.delete_all # Turn is a part of a game.  
+    
+    def create_players
+      players = initial_game_data[:players].split(";")
+      Player.new(name: players[0], email: "", password: "x").insert
+      Player.new(name: players[1], email: "", password: "x").insert
+    end
+  end
+  
   describe "get /" do
     should "give information about the server" do
       get '/'
@@ -52,11 +67,7 @@ describe 'Smash and Grab server' do
   
   describe "post /games/*" do
     should "create a new game and return a new id" do
-      players = [initial_game_data[:player1], initial_game_data[:player2]]
-      mock(Player).includes(name: players).returns [
-        Player.new(name: initial_game_data[:player1], email: ""),
-        Player.new(name: initial_game_data[:player2], email: "")
-      ]
+      create_players
     
       post '/games', initial_game_data
       
@@ -66,7 +77,7 @@ describe 'Smash and Grab server' do
       body['scenario'].should.equal initial_game_data[:scenario]
       body['players'].should.equal players
       body['mode'].should.equal initial_game_data[:mode]
-      DateTime.parse(body['started']).to_f.should.be.close Time.now.to_f - 1, 2
+      DateTime.parse(body['started_at']).to_f.should.be.close Time.now.to_f - 1, 2
     end
     
     initial_game_data.each_key do |key|    
@@ -97,9 +108,7 @@ describe 'Smash and Grab server' do
       body.should.equal "error" => "missing name"
     end 
      
-    should "fail if the game doesn't exist" do
-      stub(Game).find(game_id).returns nil
-      
+    should "fail if the game doesn't exist" do     
       post "/games/#{game_id}/4", actions: actions, name: "fish" 
       
       last_response.should.not.be.ok
@@ -108,9 +117,7 @@ describe 'Smash and Grab server' do
                         "game_id" => game_id
     end  
     
-    should "fail if trying to submit a turn out of sequence" do
-      stub(Game).find(game_id).stub!.create_turn?(4).returns false
-      
+    should "fail if trying to submit a turn out of sequence" do     
       post "/games/#{game_id}/4", actions: actions, name: "frog"
       
       last_response.should.not.be.ok
@@ -124,7 +131,7 @@ describe 'Smash and Grab server' do
       
       last_response.should.not.ok
       last_response.content_type.should.equal JSON_TYPE 
-      body.should.equal "game_id" => game_id, "turn" => 4
+      body.should.equal "success" => "turn accepted"
     end
   end
 end
