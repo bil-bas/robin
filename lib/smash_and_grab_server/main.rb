@@ -27,28 +27,56 @@ end
 
 # GET
 
+# Information about the server.
 get '/' do
   { name: SmashAndGrab::NAME, version: SmashAndGrab::VERSION }.to_json
 end
 
+# Get a list of games owned by the player.
 get '/players/:name/games' do |name|
   player = Player.where(name: name).first
-  { games: player.games }.to_json
+  
+  game_info = player.games.map do |game|
+    {
+        id: game.id,
+        scenario: game.scenario,
+        mode: game.mode,
+        turns: game.turns.count,
+     }
+  end
+     
+  { games: game_info }.to_json
 end
 
+# Get a complete game, includeing all actions.
 get '/games/:game_id' do |game_id|
-  game = Game.find(game_id)
+  game = Game.find(game_id) rescue nil
+  bad_request("game not found") unless game
+  
   game.to_json
 end
 
+# Get a particular turn. Will hold until it is ready.
 get '/games/:game_id/:turn' do |game_id, turn|
-  game = Game.where(id: game_id).first
+  game = Game.find(game_id) rescue nil
+  
+  return bad_request("game not found", game_id: game_id) unless game
+  unless turn.is_a? Integer and turn >= 0
+    return bad_request("bad turn number", game_id: game_id, turn: turn) 
+  end
  
-  turn = Turn.turn turn
+  until game.turns.count >= turn
+    sleep 0.5
+  end
+  
+  turn = game.turns[turn]
+  
+  turn.to_json
 end
 
 # POST
 
+# Create a new game.
 post '/games' do
   return bad_request("missing scenario") unless params[:scenario] 
   return bad_request("missing initial") unless params[:initial] 
@@ -60,7 +88,7 @@ post '/games' do
   
   player_names = params[:players].split ";"
   players = Player.includes name: player_names
-  raise unless players.size == 2
+  return bad_request("not all players exist") unless players.size == player_names.size
   
   game = Game.new scenario: params[:scenario], initial: params[:initial],
                   mode: params[:mode]
@@ -80,7 +108,8 @@ post '/games' do
   }.to_json  
 end
 
-post '/games/:game_id/:turn' do |game_id, turn_number|  
+# Add a new turn to a game.
+post '/games/:game_id/:turn_number' do |game_id, turn_number|  
   return bad_request("missing actions") unless params[:actions] 
   return bad_request("missing name") unless params[:name]
   #return bad_request("missing password") unless params[:password]
@@ -94,23 +123,18 @@ post '/games/:game_id/:turn' do |game_id, turn_number|
   #  
   #end
  
-  game = Game.find game_id
+  game = Game.find(game_id) rescue nil
   return bad_request("game not found", game_id: game_id) unless game
   
   # Accept a turn that hasn't already been uploaded and that is immediately after the last uploaded turn.
-  turn = turn.to_i
-  unless game.create_turn? turn
-    return bad_request("turn sent out of sequence", game_id: game_id, turn: turn) 
+  turn_number = turn_number.to_i
+  unless game.create_turn? turn_number
+    return bad_request("turn sent out of sequence", game_id: game_id, turn: turn_number) 
   end
   
-  turn = Turn.new actions: params[:actions], created_at: Time.now,
-                  game: game_id, number: turn_number
-  turn.insert
-  
-  game.turns << turn
-  game.update
+  game.turns.create actions: params[:actions]
   
   # TODO: notify opponent.
 
-  { success: "turn sent" }.to_json 
+  { success: "turn accepted" }.to_json 
 end
