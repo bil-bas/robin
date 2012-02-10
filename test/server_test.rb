@@ -7,8 +7,8 @@ describe 'Smash and Grab server' do
   before do   
     def create_players
       players = initial_game_data[:players].split(";")
-      Player.new(name: players[0], email: "x@y", password: "x").insert
-      Player.new(name: players[1], email: "z@y", password: "x").insert
+      Player.new(username: players[0], email: "x@y", password: "x").insert
+      Player.new(username: players[1], email: "z@y", password: "x").insert
       players
     end
     
@@ -72,7 +72,28 @@ describe 'Smash and Grab server' do
   end
   
   describe "post /players" do
-  
+    should "create a new game and return a new id" do
+      player_names = create_players
+    
+      post '/players', username: "cheese", email: "fish@frog.com"
+      
+      last_response.should.be.ok
+      last_response.content_type.should.equal JSON_TYPE    
+      body.should.equal "success" => "player created"
+      Player.count.should.equal 3
+      Player.where(username: "cheese").first.email.should.equal "fish@frog.com"
+    end
+    
+    should "fail if a player of that name already exists" do
+      player_names = create_players
+    
+      post '/players', username: "frog", email: "fish@frog.com"
+      
+      last_response.should.not.be.ok
+      last_response.content_type.should.equal JSON_TYPE    
+      body.should.equal "error" => "player already exists"
+      Player.count.should.equal 2
+    end 
   end
   
   describe "post /games/*" do
@@ -81,6 +102,7 @@ describe 'Smash and Grab server' do
     
       post '/games', initial_game_data
       
+      last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE 
       body.size.should.equal 5    
       body['id'].should.match ID_PATTERN
@@ -95,31 +117,32 @@ describe 'Smash and Grab server' do
         data = initial_game_data.dup
         data.delete key        
         post '/games', data
-        last_response.content_type.should.equal JSON_TYPE 
+        
         last_response.should.not.be.ok
+        last_response.content_type.should.equal JSON_TYPE 
       end    
     end   
   end
   
   describe "post /games/*/*" do  
     should "fail without actions" do
-      post "/games/#{game_id}/4", name: "frog"
+      post "/games/#{game_id}/4", username: "frog"
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
       body.should.equal "error" => "missing actions"
     end 
     
-    should "fail without name" do
+    should "fail without username" do
       post "/games/#{game_id}/4", actions: actions
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
-      body.should.equal "error" => "missing name"
+      body.should.equal "error" => "missing username"
     end 
      
     should "fail if the game doesn't exist" do     
-      post "/games/#{game_id}/2", actions: actions, name: "fish" 
+      post "/games/#{game_id}/2", actions: actions, username: "fish" 
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
@@ -132,7 +155,7 @@ describe 'Smash and Grab server' do
       game = Game.new(scenario: "meh", initial: "meh", mode: "pvp", players: Player.all)
       game.insert
       
-      post "/games/#{game.id}/2", actions: actions, name: "frog"
+      post "/games/#{game.id}/2", actions: actions, username: "frog"
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
@@ -149,7 +172,7 @@ describe 'Smash and Grab server' do
       game.turns.create actions: actions
       game.insert
       
-      post "/games/#{game.id}/2", actions: actions, name: "frog"
+      post "/games/#{game.id}/2", actions: actions, username: "frog"
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
@@ -165,7 +188,7 @@ describe 'Smash and Grab server' do
       game.turns.create actions: actions
       game.insert
       
-      post "/games/#{game.id}/2", actions: actions, name: "frog"
+      post "/games/#{game.id}/2", actions: actions, username: "frog"
       
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE 

@@ -33,8 +33,8 @@ get '/' do
 end
 
 # Get a list of games owned by the player.
-get '/players/:name/games' do |name|
-  player = Player.where(name: name).first
+get '/players/:username/games' do |username|
+  player = Player.where(username: username).first
   
   game_info = player.games.map do |game|
     {
@@ -76,6 +76,18 @@ end
 
 # POST
 
+# Create a player
+post '/players' do
+  return bad_request("missing username") unless params[:username] 
+  return bad_request("missing email") unless params[:email]
+  
+  return bad_request("player already exists") if Player.where(username: params[:username]).first
+  
+  Player.create username: params[:username], email: params[:email]
+  
+  { "success" => "player created" }.to_json
+end  
+
 # Create a new game.
 post '/games' do
   return bad_request("missing scenario") unless params[:scenario] 
@@ -87,17 +99,12 @@ post '/games' do
   end
   
   player_names = params[:players].split ";"
-  players = Player.includes name: player_names
+  players = Player.includes username: player_names
   return bad_request("not all players exist") unless players.size == player_names.size
   
   game = Game.new scenario: params[:scenario], initial: params[:initial],
-                  mode: params[:mode]
+                  mode: params[:mode], players: players
   game.insert
-  
-  players.each do |player|
-    player.games << game  
-    player.update
-  end
   
   { 
       id: game.id, 
@@ -111,10 +118,10 @@ end
 # Add a new turn to a game.
 post '/games/:game_id/:turn_number' do |game_id, turn_number|  
   return bad_request("missing actions") unless params[:actions] 
-  return bad_request("missing name") unless params[:name]
+  return bad_request("missing username") unless params[:username]
   #return bad_request("missing password") unless params[:password]
   
-  #player = Player.where(name: params[:name]).first
+  #player = Player.where(username: params[:username]).first
   #return bad_request "bad username or password" unless player 
   
   #  return bad_request "bad username or password"
@@ -126,7 +133,8 @@ post '/games/:game_id/:turn_number' do |game_id, turn_number|
   game = Game.find(game_id) rescue nil
   return bad_request("game not found", game_id: game_id) unless game
   
-  # Accept a turn that hasn't already been uploaded and that is immediately after the last uploaded turn.
+  # Accept a turn that hasn't already been uploaded and that is immediately after
+  # the last uploaded turn.
   turn_number = turn_number.to_i
   unless game.create_turn? turn_number
     return bad_request("turn sent out of sequence", game_id: game_id, turn: turn_number) 
