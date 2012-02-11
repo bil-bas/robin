@@ -4,20 +4,15 @@ JSON_TYPE = "application/json;charset=utf-8"
 ID_PATTERN = /^[0-9a-f]{24}$/
 
 describe 'Smash and Grab server' do   
-  before do   
-    def create_players
-      players = initial_game_data[:players].split(";")
-      Player.new(username: players[0], email: "x@y", password: "x").insert
-      Player.new(username: players[1], email: "z@y", password: "x").insert
-      players
-    end
-    
+  before do 
     def initial_game_data
       {
           scenario: "01_Giant_chicken",
           initial: { data: "cheese" }.to_json,
           players: "fish;frog",
-          mode: "coop-baddies"
+          mode: "coop-baddies",
+          username: "frog", 
+          password: "abcdefg",
       }
     end
 
@@ -29,6 +24,16 @@ describe 'Smash and Grab server' do
     end
 
     def game_id; "1" * 24; end
+    
+    def player_names
+      initial_game_data[:players].split(";")
+    end
+    
+
+    Player.create username: player_names[0], email: "x@y.c",
+                  password: "abcdefg"
+    Player.create username: player_names[1], email: "z@y.c",
+                  password: "abcdefg"
   end
   
   after do
@@ -46,7 +51,6 @@ describe 'Smash and Grab server' do
   
   describe "get /players/*/games" do
     should "return a list of game ids" do
-      create_players
       game1 = Game.new(scenario: "x", mode: "pvp", players: Player.all).insert
       game2 = Game.new(scenario: "y", mode: "coop-baddies", players: Player.all).insert
       game2.turns.create actions: actions
@@ -72,10 +76,8 @@ describe 'Smash and Grab server' do
   end
   
   describe "post /players" do
-    should "create a new game and return a new id" do
-      player_names = create_players
-    
-      post '/players', username: "cheese", email: "fish@frog.com"
+    should "create a new game and return a new id" do   
+      post '/players', username: "cheese", password: "abcdefg", email: "fish@frog.com"
       
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE    
@@ -84,10 +86,8 @@ describe 'Smash and Grab server' do
       Player.where(username: "cheese").first.email.should.equal "fish@frog.com"
     end
     
-    should "fail if a player of that name already exists" do
-      player_names = create_players
-    
-      post '/players', username: "frog", email: "fish@frog.com"
+    should "fail if a player of that name already exists" do   
+      post '/players', username: "frog", password: "abcdefg", email: "fish@frog.com"
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE    
@@ -97,9 +97,7 @@ describe 'Smash and Grab server' do
   end
   
   describe "post /games/*" do
-    should "create a new game and return a new id" do
-      player_names = create_players
-    
+    should "create a new game and return a new id" do   
       post '/games', initial_game_data
       
       last_response.should.be.ok
@@ -124,9 +122,9 @@ describe 'Smash and Grab server' do
     end   
   end
   
-  describe "post /games/*/*" do  
+  describe "post /games/*/*" do     
     should "fail without actions" do
-      post "/games/#{game_id}/4", username: "frog"
+      post "/games/#{game_id}/4", username: "frog", password: "abcdefg"
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
@@ -142,7 +140,7 @@ describe 'Smash and Grab server' do
     end 
      
     should "fail if the game doesn't exist" do     
-      post "/games/#{game_id}/2", actions: actions, username: "fish" 
+      post "/games/#{game_id}/2", actions: actions, username: "frog", password: "abcdefg" 
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
@@ -151,11 +149,10 @@ describe 'Smash and Grab server' do
     end  
     
     should "fail if trying to submit a turn too early" do       
-      create_players
       game = Game.new(scenario: "meh", initial: "meh", mode: "pvp", players: Player.all)
       game.insert
       
-      post "/games/#{game.id}/2", actions: actions, username: "frog"
+      post "/games/#{game.id}/2", actions: actions, username: "frog", password: "abcdefg"
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
@@ -165,14 +162,13 @@ describe 'Smash and Grab server' do
       game.turns.count.should.equal 0
     end
     
-    should "fail if trying to submit a turn too late" do 
-      create_players    
+    should "fail if trying to submit a turn too late" do    
       game = Game.new(scenario: "meh", initial: "meh", mode: "pvp", players: Player.all)
       game.turns.create actions: actions
       game.turns.create actions: actions
       game.insert
       
-      post "/games/#{game.id}/2", actions: actions, username: "frog"
+      post "/games/#{game.id}/2", actions: actions, username: "frog", password: "abcdefg"
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
@@ -183,12 +179,11 @@ describe 'Smash and Grab server' do
     end
    
     should "succeed if the turn is the one expected" do
-      create_players
       game = Game.new(scenario: "meh", initial: "meh", mode: "pvp", players: Player.all)
       game.turns.create actions: actions
       game.insert
       
-      post "/games/#{game.id}/2", actions: actions, username: "frog"
+      post "/games/#{game.id}/2", actions: actions, username: "frog", password: "abcdefg"
       
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE 

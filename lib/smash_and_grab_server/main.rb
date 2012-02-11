@@ -8,7 +8,6 @@ require_relative "model/player"
 require_relative "model/game"
 require_relative "model/turn"
 
-SEED_CHARS = ("a".."z").to_a + ("A".."Z").to_a + ("0".."9").to_a + [".", "/"]
 
 # Connect to the database.
 raise "MONGOLAB_URI unset" unless ENV['MONGOLAB_URI']
@@ -79,11 +78,13 @@ end
 # Create a player
 post '/players' do
   return bad_request("missing username") unless params[:username] 
+  return bad_request("missing password") unless params[:password] 
   return bad_request("missing email") unless params[:email]
   
   return bad_request("player already exists") if Player.where(username: params[:username]).first
   
-  Player.create username: params[:username], email: params[:email]
+  Player.create username: params[:username], email: params[:email],
+                password: params[:password]
   
   { "success" => "player created" }.to_json
 end  
@@ -98,10 +99,22 @@ post '/games' do
     return bad_request("invalid mode") 
   end
   
+  # Validate.
+  return bad_request("missing username") unless params[:username] 
+  return bad_request("missing password") unless params[:password] 
+  player = Player.where(username: params[:username]).first
+  return bad_request "bad username or password" unless player 
+  return bad_request "bad username or password" unless player.authenticate params[:password]
+  
+  # Work out which players will be in the game.
   player_names = params[:players].split ";"
-  players = Player.includes username: player_names
+  unless player_names.include? player.username
+    return bad_request("username must be one of players")
+  end
+  players = Player.includes username: player_names # Ensure the order is correct.
   return bad_request("not all players exist") unless players.size == player_names.size
   
+  # Create the game.s
   game = Game.new scenario: params[:scenario], initial: params[:initial],
                   mode: params[:mode], players: players
   game.insert
@@ -118,18 +131,15 @@ end
 # Add a new turn to a game.
 post '/games/:game_id/:turn_number' do |game_id, turn_number|  
   return bad_request("missing actions") unless params[:actions] 
-  return bad_request("missing username") unless params[:username]
-  #return bad_request("missing password") unless params[:password]
   
-  #player = Player.where(username: params[:username]).first
-  #return bad_request "bad username or password" unless player 
-  
-  #  return bad_request "bad username or password"
-  #end
-  #unless player and player.password == params[:password].crypt(SEED_CHARS.sample(2).join)
-  #  
-  #end
+  # Validate.
+  return bad_request("missing username") unless params[:username] 
+  return bad_request("missing password") unless params[:password] 
+  player = Player.where(username: params[:username]).first
+  return bad_request "bad username or password" unless player 
+  return bad_request "bad username or password" unless player.authenticate params[:password]
  
+  # Check if the game exists.
   game = Game.find(game_id) rescue nil
   return bad_request("game not found", game_id: game_id) unless game
   

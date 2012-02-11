@@ -11,6 +11,7 @@ GEM
     bacon-rr (0.1.0)
       bacon (>= 1.1.0)
       rr (>= 1.0)
+    bcrypt-ruby (3.0.1-x86-mingw32)
     bson (1.5.2)
     bson_ext (1.5.2)
       bson (= 1.5.2)
@@ -59,6 +60,7 @@ PLATFORMS
 DEPENDENCIES
   bacon (~> 1.1.0)
   bacon-rr (~> 0.1.0)
+  bcrypt-ruby (~> 3.0.1)
   bson_ext (~> 1.5.2)
   foreman (~> 0.39.0)
   mongoid (~> 2.4.3)
