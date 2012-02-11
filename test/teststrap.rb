@@ -3,8 +3,6 @@ require 'rack/test'
 require 'set'
 require 'bacon/rr'
    
-# Run on a local server during tests.
-ENV['MONGOLAB_URI'] = "mongodb://localhost:27017/test"
 require_relative '../lib/smash_and_grab_server'
 
 set :environment, :test

@@ -1,6 +1,6 @@
 module SmashAndGrab
-  NAME = "Smash and Grab"
-  VERSION = "0.0.1"
+  NAME = "Smash and Grab server"
+  VERSION = "0.0.1alpha"
   VALID_GAME_MODES = ['coop-baddies', 'coop-goodies', 'pvp']
 end
 
@@ -10,10 +10,10 @@ require_relative "model/action"
 
 
 # Connect to the database.
-raise "MONGOLAB_URI unset" unless ENV['MONGOLAB_URI']
-database_name = ENV['MONGOLAB_URI'][/[^\/]+$/]
+database_uri = ENV['MONGOLAB_URI'] || "mongodb://localhost:27017/test"
+database_name = database_uri[/[^\/]+$/]
 Mongoid.configure do |config| 
-  config.master = Mongo::Connection.from_uri(ENV['MONGOLAB_URI']).db database_name
+  config.master = Mongo::Connection.from_uri(database_uri).db database_name
 end
 
 after do
