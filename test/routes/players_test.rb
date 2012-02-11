@@ -16,7 +16,7 @@ describe "/players route" do
       Player.where(username: "cheese").first.email.should.equal "fish@frog.com"
     end
     
-    should "fail if a player of that name already exists" do   
+    should "fail if a player of that name already exists" do     
       post '/players', username: "frog", password: "abcdefg", email: "fish@frog.com"
       
       last_response.should.not.be.ok

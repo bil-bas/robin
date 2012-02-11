@@ -3,7 +3,7 @@ require 'rack/test'
 require 'set'
 require 'bacon/rr'
   
-ENV['RACK_TEST'] = "true"
+ENV['RACK_ENV'] = "test"
   
 require_relative '../lib/smash_and_grab_server'
 

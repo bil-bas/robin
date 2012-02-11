@@ -4,8 +4,6 @@ def initial_game_data
       initial: { data: "cheese" }.to_json,
       players: "fish;frog",
       mode: "coop-baddies",
-      username: "frog", 
-      password: "abcdefg",
   }
 end
 
@@ -17,8 +15,6 @@ end
 
 def action_data
   {
-      username: "fish", 
-      password: "abcdefg",
       data: action,
   }
 end  

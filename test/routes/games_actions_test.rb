@@ -14,6 +14,7 @@ describe "/games route" do
     end
     
     should "return all the actions by default" do
+      authorize 'fish', 'abcdefg'
       get "/games/#{@game.id}/actions"
       last_response.should.be.ok 
       last_response.content_type.should.equal JSON_TYPE
@@ -21,6 +22,7 @@ describe "/games route" do
     end
     
     should "return the all the actions from :from to the end" do
+      authorize 'fish', 'abcdefg'
       get "/games/#{@game.id}/actions", from: 1
       last_response.should.be.ok 
       last_response.content_type.should.equal JSON_TYPE
@@ -28,6 +30,7 @@ describe "/games route" do
     end
     
     should "return no actions if :from is after the end of the actions" do
+      authorize 'fish', 'abcdefg'
       get "/games/#{@game.id}/actions", from: 3
       last_response.should.be.ok 
       last_response.content_type.should.equal JSON_TYPE
@@ -35,6 +38,7 @@ describe "/games route" do
     end
     
     should "fail is given a negative action number" do
+      authorize 'fish', 'abcdefg'
       get "/games/#{@game.id}/actions", from: -4
       last_response.should.not.be.ok 
       last_response.content_type.should.equal JSON_TYPE
@@ -53,6 +57,7 @@ describe "/games route" do
       should "fail without #{key.inspect}" do 
         data = action_data.dup
         data.delete key        
+        authorize 'fish', 'abcdefg'
         post "/games/#{@game.id}/actions", data
         
         last_response.should.not.be.ok
@@ -65,7 +70,8 @@ describe "/games route" do
       end 
     end
      
-    should "fail if the game doesn't exist" do     
+    should "fail if the game doesn't exist" do  
+      authorize 'fish', 'abcdefg'    
       post "/games/#{game_id}/actions", action_data       
       
       last_response.should.not.be.ok
@@ -79,6 +85,7 @@ describe "/games route" do
     
     should "fail if trying to submit an action in wrong turn" do 
       data = action_data.merge username: Player.all[1].username
+      authorize 'frog', 'abcdefg'
       post "/games/#{@game.id}/actions", data
       
       last_response.should.not.be.ok
@@ -95,6 +102,7 @@ describe "/games route" do
                               password: "abcdefg"    
                               
       data = action_data.merge username: player3.username
+      authorize 'cheeseman', 'abcdefg'
       post "/games/#{@game.id}/actions", data      
       
       last_response.should.not.be.ok
@@ -106,7 +114,8 @@ describe "/games route" do
       game.complete?.should.equal false 
     end
    
-    should "succeed if the action sent by the expected player" do    
+    should "succeed if the action sent by the expected player" do  
+      authorize 'fish', 'abcdefg'    
       post "/games/#{@game.id}/actions", action_data    
       
       last_response.should.be.ok
@@ -119,6 +128,7 @@ describe "/games route" do
     end
     
     should "succeed and advance the turn if :end_turn sent" do     
+      authorize 'fish', 'abcdefg'
       post "/games/#{@game.id}/actions", action_data.merge(end_turn: true)
       
       last_response.should.be.ok
@@ -131,6 +141,7 @@ describe "/games route" do
     end
     
     should "succeed and complete the game if :end_gane sent" do      
+      authorize 'fish', 'abcdefg'
       post "/games/#{@game.id}/actions", action_data.merge(end_game: true)
       
       last_response.should.be.ok

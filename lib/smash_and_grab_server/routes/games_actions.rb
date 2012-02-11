@@ -1,6 +1,8 @@
 class TurnServer < Sinatra::Base
   # Get actions for a game. Defaults to all actions, but can define :from
   get %r{/games/#{ID_PATTERN}/actions} do |game_id|
+    validate_for_access :any_player
+    
     from = params[:from].to_i # May be nil, which becomes 0
    
     game = Game.find(game_id) rescue nil 
@@ -12,9 +14,10 @@ class TurnServer < Sinatra::Base
   end
 
   # Add a new action to a game.
-  post %r{/games/#{ID_PATTERN}/actions} do |game_id| 
+  post %r{/games/#{ID_PATTERN}/actions} do |game_id|
+    player = validate_for_access :any_player
+    
     bad_request "missing data" unless params[:data] 
-    player = validate_player params 
    
     # Check if the game exists.
     game = Game.find(game_id) rescue nil

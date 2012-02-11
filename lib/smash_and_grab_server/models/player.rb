@@ -21,4 +21,12 @@ class Player
   validates_presence_of :email
   validates_uniqueness_of :email, message: "Player already exists with this email."
   #validates_format_of :email, with: /^[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i
+  
+  class << self 
+    # Returns the requested Player object if the password checks out.
+    def authenticate(username, password)
+      player = where(username: username).first
+      player and player.try(:authenticate, password)
+    end
+  end
 end

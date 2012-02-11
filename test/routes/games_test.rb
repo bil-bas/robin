@@ -14,6 +14,7 @@ describe "/games route" do
     end
     
     should "return the game and all actions by default" do
+      authorize 'fish', 'abcdefg'
       get "/games/#{@game.id}"
       last_response.should.be.ok 
       last_response.content_type.should.equal JSON_TYPE
@@ -32,6 +33,7 @@ describe "/games route" do
   # POST /games
   describe "POST /games" do   
     should "create a new game and return a new id" do   
+      authorize 'fish', 'abcdefg'
       post '/games', initial_game_data
       
       last_response.should.be.ok
@@ -44,6 +46,7 @@ describe "/games route" do
     
     initial_game_data.each_key do |key|    
       should "fail without #{key.inspect}" do 
+        authorize 'fish', 'abcdefg'
         data = initial_game_data.dup
         data.delete key        
         post '/games', data

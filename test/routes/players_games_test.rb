@@ -13,6 +13,7 @@ describe "/players route" do
                        players: Player.all, turn: 2, complete: true,
                        actions: [Action.new(data: action_data)]
       
+      authorize 'fish', 'abcdefg'
       get "/players/fish/games"
        
       last_response.should.be.ok       

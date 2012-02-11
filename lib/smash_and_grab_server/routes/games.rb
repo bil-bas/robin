@@ -3,6 +3,8 @@ class TurnServer < Sinatra::Base
   
   # Get a complete game, includeing all actions.
   get %r{/games/#{ID_PATTERN}} do |game_id|
+    validate_for_access :any_player
+    
     game = Game.find(game_id) rescue nil
     bad_request "game not found" unless game
     
@@ -14,13 +16,13 @@ class TurnServer < Sinatra::Base
 
   # Create a new game.
   post '/games' do
+    player = validate_for_access :any_player
+    
     bad_request "missing scenario" unless params[:scenario] 
     bad_request "missing initial" unless params[:initial] 
     bad_request "missing players" unless params[:players] 
     bad_request "missing mode" unless params[:mode] 
-    bad_request "invalid mode" unless SmashAndGrab::VALID_GAME_MODES.include? params[:mode] 
-    
-    player = validate_player params 
+    bad_request "invalid mode" unless SmashAndGrab::VALID_GAME_MODES.include? params[:mode]
     
     # Work out which players will be in the game.
     player_names = params[:players].split ";"
