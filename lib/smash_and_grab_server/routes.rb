@@ -54,8 +54,8 @@ class TurnServer < Sinatra::Base
   require_relative "routes/games"
   require_relative "routes/players_games"
   require_relative "routes/players"
+  require_relative "routes/maps"
   
-
   run! unless test?
 end
 

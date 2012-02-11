@@ -2,17 +2,16 @@ class Game
   include Mongoid::Document
   include Mongoid::Timestamps
   
-  field :scenario, type: String
   field :mode, type: String
-  field :initial, type: String # Essentially, this is the .sgl file.
   field :turn, type: Integer, default: 0
   field :complete, type: Boolean, default: false
   has_and_belongs_to_many :players # Well, 2 :)
   embeds_many :actions
+  belongs_to :map
   
-  validates_presence_of :scenario
+  validates_presence_of :players
+  validates_presence_of :map
   validates_presence_of :mode
-  validates_presence_of :initial
   
   def current_player
     players[turn % players.size]
@@ -20,8 +19,8 @@ class Game
   
   def summary
     {
-        id: id,
-        scenario: scenario,
+        game_id: id,
+        map_id: map.id,
         mode: mode,
         turn: turn,
         complete: complete?,

@@ -2,14 +2,18 @@ require_relative '../teststrap'
 require_relative 'helpers/helper'
 
 describe "/games route" do  
-  before { create_players } 
+  before do
+    create_players 
+    @map = Map.create! name: "My Map", data: "xyz", 
+                       uploader: @player1  
+  end
   after { clean_database }
   
   # GET /games/*/actions  
   describe "GET /games/*/actions" do
     before do
       actions = 3.times.map {|i| Action.new data: i.to_s }
-      @game = Game.create! scenario: "xxy", initial: "meh", mode: "pvp",
+      @game = Game.create! map: @map, mode: "pvp",
                            players: Player.all, actions: actions     
     end
     
@@ -48,9 +52,8 @@ describe "/games route" do
   
   # POST /games/*/actions 
   describe "POST /games/*/actions" do
-    before do
-      @game = Game.create! scenario: "meh", initial: "meh", mode: "pvp",
-                           players: Player.all
+    before do     
+      @game = Game.create! map: @map, mode: "pvp", players: Player.all
     end
     
     action_data.each_key do |key|    

@@ -9,6 +9,7 @@ class Player
   field :password_digest, type: String
   field :email, type: String
   has_and_belongs_to_many :games
+  has_many :uploaded_maps, class_name: "Map", inverse_of: :uploader
   
   index :username, :unique  
   validates_presence_of :username

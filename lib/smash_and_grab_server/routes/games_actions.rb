@@ -32,7 +32,8 @@ class TurnServer < Sinatra::Base
     # Ignore actions sent, unless by the currently active player. 
     bad_request "action sent out of sequence" unless player == game.current_player
     
-    game.actions.create! data: params[:data]
+    action = game.actions.create data: params[:data]
+    bad_request "failed to create action" unless action.persisted?
     
     message = if params[:end_game]
                 # Close off the game if the action ended the game.

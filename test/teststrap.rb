@@ -10,8 +10,14 @@ require_relative '../lib/smash_and_grab_server'
 JSON_TYPE = "application/json;charset=utf-8"  
 ID_PATTERN = /^[0-9a-f]{24}$/
 
-Player.delete_all
-Game.delete_all # Action is a part of a game. 
+def clean_database
+  Player.delete_all
+  Game.delete_all 
+  Map.delete_all
+  #Action.delete_all # Action is a part of a Game.
+end 
+
+clean_database
 
 def app
   TurnServer

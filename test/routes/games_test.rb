@@ -2,14 +2,19 @@ require_relative '../teststrap'
 require_relative 'helpers/helper'
 
 describe "/games route" do  
-  before { create_players } 
+  before do
+    create_players
+    @map = Map.create! name: "My Map", data: "xyz", 
+                       uploader: @player1
+  end
   after { clean_database }
   
   # GET /games/*
   describe "GET /games/*" do
     before do
       actions = 3.times.map {|i| Action.new data: i.to_s }
-      @game = Game.create! scenario: "x", initial: "meh", mode: "pvp",
+
+      @game = Game.create! map: @map, mode: "pvp",
                            players: Player.all, actions: actions    
     end
     
@@ -19,13 +24,12 @@ describe "/games route" do
       last_response.should.be.ok 
       last_response.content_type.should.equal JSON_TYPE
       body.should.equal( 
-          "id" => @game.id.to_s,
-          "scenario" => "x",
+          "game_id" => @game.id.to_s,
+          "map_id" => @map.id.to_s,
           "mode" => "pvp",
           "turn" => 0,
           "complete" => false,
-          "initial" => "meh",          
-          "actions" => ["0", "1", "2"],
+          "actions" => ["0", "1", "2"]
       )
     end
   end
@@ -34,7 +38,7 @@ describe "/games route" do
   describe "POST /games" do   
     should "create a new game and return a new id" do   
       authorize 'fish', 'abcdefg'
-      post '/games', initial_game_data
+      post '/games', initial_game_data.merge(map_id: @map.id)
       
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE 
@@ -49,7 +53,7 @@ describe "/games route" do
         authorize 'fish', 'abcdefg'
         data = initial_game_data.dup
         data.delete key        
-        post '/games', data
+        post '/games', data.merge(map_id: @map.id)
         
         last_response.should.not.be.ok
         last_response.content_type.should.equal JSON_TYPE 

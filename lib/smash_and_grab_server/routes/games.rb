@@ -9,8 +9,7 @@ class TurnServer < Sinatra::Base
     bad_request "game not found" unless game
     
     game.summary.merge(
-        initial: game.initial,
-        actions: game.actions.map(&:data)
+        actions: game.actions.map(&:data),
     ).to_json
   end
 
@@ -18,8 +17,7 @@ class TurnServer < Sinatra::Base
   post '/games' do
     player = validate_for_access :any_player
     
-    bad_request "missing scenario" unless params[:scenario] 
-    bad_request "missing initial" unless params[:initial] 
+    bad_request "missing map_id" unless params[:map_id]  
     bad_request "missing players" unless params[:players] 
     bad_request "missing mode" unless params[:mode] 
     bad_request "invalid mode" unless SmashAndGrab::VALID_GAME_MODES.include? params[:mode]
@@ -30,10 +28,15 @@ class TurnServer < Sinatra::Base
 
     players = Player.includes username: player_names # Ensure the order is correct.
     bad_request "not all players exist" unless players.size == player_names.size
-    
+        
+    # Check if the map exists.
+    map = Map.find(params[:map_id]) rescue nil
+    bad_request "no such map" unless map
+     
     # Create the game.
-    game = Game.create! scenario: params[:scenario], initial: params[:initial],
-                 mode: params[:mode], players: players
+    game = Game.create map: map, mode: params[:mode], players: players
+    
+    bad_request "failed to create game" unless game.persisted?
    
     { 
       success: "game created",
