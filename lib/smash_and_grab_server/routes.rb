@@ -1,6 +1,9 @@
 require 'sinatra/base'
 
-class TurnServer < Sinatra::Base 
+class TurnServer < Sinatra::Base
+  ID_PATTERN = "([a-f0-9]{24})"
+  PLAYER_NAME_PATTERN = "([a-zA-Z][a-zA-Z0-9]+)"
+  
   def validate_player(params)
     bad_request "missing username" unless params[:username] 
     bad_request "missing password" unless params[:password] 

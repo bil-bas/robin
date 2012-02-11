@@ -2,7 +2,7 @@ class TurnServer < Sinatra::Base
   # GET/POST /games and /games/*
   
   # Get a complete game, includeing all actions.
-  get '/games/*' do |game_id|
+  get %r{/games/#{ID_PATTERN}} do |game_id|
     game = Game.find(game_id) rescue nil
     bad_request "game not found" unless game
     
