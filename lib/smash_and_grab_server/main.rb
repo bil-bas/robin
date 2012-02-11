@@ -6,7 +6,7 @@ end
 
 require_relative "model/player"
 require_relative "model/game"
-require_relative "model/turn"
+require_relative "model/action"
 
 
 # Connect to the database.
@@ -50,7 +50,8 @@ get '/players/:username/games' do |username|
         id: game.id,
         scenario: game.scenario,
         mode: game.mode,
-        turns: game.turns.count,
+        turn: game.turn,
+        complete: game.complete?,
      }
   end
      
@@ -65,22 +66,18 @@ get '/games/:game_id' do |game_id|
   game.to_json
 end
 
-# Get a particular turn. Will hold until it is ready.
-get '/games/:game_id/:turn' do |game_id, turn|
-  game = Game.find(game_id) rescue nil
+# Get a particular action. Will hold until it is ready.
+get '/games/:game_id/actions/\d+' do |game_id, action_number|
+  game = Game.find(game_id) rescue nil 
+  bad_request "game not found" unless game
   
-  bad_request("game not found", game_id: game_id) unless game
-  unless turn.is_a? Integer and turn >= 0
-    bad_request "bad turn number", game_id: game_id, turn: turn
-  end
- 
-  until game.turns.count >= turn
-    sleep 0.5
+  unless (0...game.actions.count).include? action_number
+    bad_request "bad action number (#{game.actions.count} actions)"
   end
   
-  turn = game.turns[turn]
+  action_number = game.actions[action_number]
   
-  turn.to_json
+  action_number.to_json
 end
 
 # POST
@@ -96,7 +93,9 @@ post '/players' do
   Player.create! username: params[:username], email: params[:email],
                  password: params[:password]
   
-  { "success" => "player created" }.to_json
+  { 
+      "success" => "player created",
+  }.to_json
 end  
 
 # Create a new game.
@@ -105,17 +104,14 @@ post '/games' do
   bad_request "missing initial" unless params[:initial] 
   bad_request "missing players" unless params[:players] 
   bad_request "missing mode" unless params[:mode] 
-  unless SmashAndGrab::VALID_GAME_MODES.include? params[:mode] 
-    bad_request "invalid mode" 
-  end
+  bad_request "invalid mode" unless SmashAndGrab::VALID_GAME_MODES.include? params[:mode] 
   
   player = validate_player params 
   
   # Work out which players will be in the game.
   player_names = params[:players].split ";"
-  unless player_names.include? player.username
-    bad_request "username must be one of players"
-  end
+  bad_request "username must be one of players" unless player_names.include? player.username
+
   players = Player.includes username: player_names # Ensure the order is correct.
   bad_request "not all players exist" unless players.size == player_names.size
   
@@ -124,34 +120,46 @@ post '/games' do
                mode: params[:mode], players: players
  
   { 
-      id: game.id, 
-      scenario: game.scenario,
-      started_at: game.created_at,
-      players: player_names,
-      mode: game.mode
+    success: "game created",
+    id: game.id,
   }.to_json  
 end
 
-# Add a new turn to a game.
-post '/games/:game_id/:turn_number' do |game_id, turn_number|  
-  bad_request("missing actions") unless params[:actions] 
-  
-  validate_player params 
+# Add a new action to a game.
+post '/games/:game_id/actions' do |game_id| 
+  bad_request "missing data" unless params[:data] 
+  player = validate_player params 
  
   # Check if the game exists.
   game = Game.find(game_id) rescue nil
-  bad_request("game not found", game_id: game_id) unless game
-  
-  # Accept a turn that hasn't already been uploaded and that is immediately after
-  # the last uploaded turn.
-  turn_number = turn_number.to_i
-  unless game.create_turn? turn_number
-    bad_request "turn sent out of sequence", game_id: game_id, turn: turn_number
-  end
-  
-  game.turns.create! actions: params[:actions]
-  
-  # TODO: notify opponent.
+  bad_request "game not found" unless game
 
-  { success: "turn accepted" }.to_json 
+  # Check if the player validated is actually one of the players.
+  bad_request "player not in game" unless game.players.include? player
+
+  # Ignore actions after the game is finished.
+  bad_request "game already complete" if game.complete?
+  
+  # Ignore actions sent, unless by the currently active player. 
+  bad_request "action sent out of sequence" unless player == game.current_player
+  
+  game.actions.create! data: params[:data]
+  
+  message = if params[:end_game]
+              # Close off the game if the action ended the game.
+              game.complete = true
+              game.update   
+              # TODO: notify opponent via email and/or in next request?
+              "game completed"
+            elsif params[:end_turn]   
+              # Advance to new turn if the action ended the turn. 
+              game.turn += 1
+              game.update    
+              # TODO: notify opponent via email and/or in next request?
+              "turn advanced"
+            else 
+              "action accepted"
+            end
+  
+  { success: message }.to_json 
 end

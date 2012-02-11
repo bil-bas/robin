@@ -10,7 +10,7 @@ class Player
   field :email, type: String
   has_and_belongs_to_many :games
   
-  key :username  
+  index :username, :unique  
   validates_presence_of :username
   validates_length_of :username, minimum: 3, maximum: 16
   validates_uniqueness_of :username,  message: "Player already exists with this username."

@@ -10,7 +10,7 @@ require_relative '../lib/smash_and_grab_server'
 set :environment, :test
 
 Player.delete_all
-Game.delete_all # Turn is a part of a game. 
+Game.delete_all # Action is a part of a game. 
 
 def app
   Sinatra::Application
