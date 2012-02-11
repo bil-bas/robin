@@ -52,13 +52,13 @@ RESTful Routes
 * `POST /players`             
     - Create a new player.
     
-* `GET  /players/<player-id>`            
+* `GET  /players/<player-name>`            
     - Get information about a player.
     
-* `GET  /players/<player-id>/games`
+* `GET  /players/<player-name>/games`
     - List of games the player has played or is playing.
     
-* `GET  /players/<player-id>/maps`
+* `GET  /players/<player-name>/maps`
     - List of maps the player has uploaded.
 
 
