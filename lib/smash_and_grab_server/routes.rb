@@ -44,6 +44,24 @@ class TurnServer < Sinatra::Base
     content_type :json
   end
   
+  # Handle problems
+  
+  not_found do
+    { error: 'not found' }.to_json
+  end
+  
+  error 401 do
+    # TODO: log the error.
+    { error: 'access denied' }.to_json
+  end
+  
+  error do
+    # TODO: log the error.
+    { error: 'server error' }.to_json
+  end
+  
+  # Root resource.
+  
   # GET /
   get '/' do
     # Information about the server.
