@@ -53,6 +53,67 @@ describe 'Smash and Grab server' do
     end
   end
   
+  describe "get /games/*" do
+    before do
+      @game = Game.create! scenario: "x", initial: "meh", mode: "pvp",
+                           players: Player.all
+                           
+      3.times {|i| @game.actions.create! data: i.to_s }
+    end
+    
+    should "return the game and all actions by default" do
+      get "/games/#{@game.id}"
+      last_response.should.be.ok 
+      last_response.content_type.should.equal JSON_TYPE
+      body.should.equal( 
+          "id" => @game.id.to_s,
+          "scenario" => "x",
+          "mode" => "pvp",
+          "turn" => 0,
+          "complete" => false,
+          "initial" => "meh",          
+          "actions" => ["0", "1", "2"],
+      )
+    end
+  end
+  
+  describe "get /games/*/actions" do
+    before do
+      @game = Game.create! scenario: "x", initial: "meh", mode: "pvp",
+                           players: Player.all
+                           
+      3.times {|i| @game.actions.create! data: i.to_s }
+    end
+    
+    should "return the all the actions by default" do
+      get "/games/#{@game.id}/actions"
+      last_response.should.be.ok 
+      last_response.content_type.should.equal JSON_TYPE
+      body.should.equal ["0", "1", "2"]
+    end
+    
+    should "return the all the actions from :from to the end" do
+      get "/games/#{@game.id}/actions", from: 1
+      last_response.should.be.ok 
+      last_response.content_type.should.equal JSON_TYPE
+      body.should.equal ["1", "2"]
+    end
+    
+    should "return no actions if :from is after the end of the actions" do
+      get "/games/#{@game.id}/actions", from: 3
+      last_response.should.be.ok 
+      last_response.content_type.should.equal JSON_TYPE
+      body.should.equal []
+    end
+    
+    should "fail is given a negative action number" do
+      get "/games/#{@game.id}/actions", from: -4
+      last_response.should.not.be.ok 
+      last_response.content_type.should.equal JSON_TYPE
+      body["error"].should.equal "bad action number"
+    end
+  end
+  
   describe "get /players/*/games" do
     should "return a list of game ids" do
       game1 = Game.create! scenario: "x", initial: "s", mode: "pvp",
@@ -62,9 +123,10 @@ describe 'Smash and Grab server' do
       game2.actions.create! data: action_data
       
       get "/players/fish/games"
-           
+       
+      last_response.should.be.ok       
       last_response.content_type.should.equal JSON_TYPE 
-      body['games'].should.equal [
+      body.should.equal [
           {
               "id" => game1.id.to_s,
               "scenario" => "x",

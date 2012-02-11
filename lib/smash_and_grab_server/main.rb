@@ -44,18 +44,8 @@ end
 # Get a list of games owned by the player.
 get '/players/:username/games' do |username|
   player = Player.where(username: username).first
-  
-  game_info = player.games.map do |game|
-    {
-        id: game.id,
-        scenario: game.scenario,
-        mode: game.mode,
-        turn: game.turn,
-        complete: game.complete?,
-     }
-  end
      
-  { games: game_info }.to_json
+  player.games.map(&:summary).to_json
 end
 
 # Get a complete game, includeing all actions.
@@ -63,21 +53,22 @@ get '/games/:game_id' do |game_id|
   game = Game.find(game_id) rescue nil
   bad_request "game not found" unless game
   
-  game.to_json
+  game.summary.merge(
+      initial: game.initial,
+      actions: game.actions.map(&:data)
+  ).to_json
 end
 
-# Get a particular action. Will hold until it is ready.
-get '/games/:game_id/actions/\d+' do |game_id, action_number|
+# Get actions for a game. Defaults to all actions, but can define :from
+get '/games/:game_id/actions' do |game_id|
+  from = params[:from].to_i # May be nil, which becomes 0
+  
   game = Game.find(game_id) rescue nil 
   bad_request "game not found" unless game
   
-  unless (0...game.actions.count).include? action_number
-    bad_request "bad action number (#{game.actions.count} actions)"
-  end
+  bad_request "bad action number" if from < 0
   
-  action_number = game.actions[action_number]
-  
-  action_number.to_json
+  game.actions[from..-1].map(&:data).to_json
 end
 
 # POST

@@ -17,4 +17,14 @@ class Game
   def current_player
     players[turn % players.size]
   end
+  
+  def summary
+    {
+        id: id,
+        scenario: scenario,
+        mode: mode,
+        turn: turn,
+        complete: complete?,
+    }
+  end
 end
