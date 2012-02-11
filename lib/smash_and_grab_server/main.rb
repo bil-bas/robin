@@ -20,8 +20,18 @@ after do
   content_type :json
 end
 
+def validate_player(params)
+  bad_request "missing username" unless params[:username] 
+  bad_request "missing password" unless params[:password] 
+  player = Player.where(username: params[:username]).first
+  bad_request "bad username or password" unless player 
+  bad_request "bad username or password" unless player.authenticate params[:password]
+  
+  player
+end
+
 def bad_request(message, data = {})
-  [400, { error: message }.merge!(data).to_json]
+  halt [400, { error: message }.merge!(data).to_json]
 end
 
 # GET
@@ -50,7 +60,7 @@ end
 # Get a complete game, includeing all actions.
 get '/games/:game_id' do |game_id|
   game = Game.find(game_id) rescue nil
-  bad_request("game not found") unless game
+  bad_request "game not found" unless game
   
   game.to_json
 end
@@ -59,9 +69,9 @@ end
 get '/games/:game_id/:turn' do |game_id, turn|
   game = Game.find(game_id) rescue nil
   
-  return bad_request("game not found", game_id: game_id) unless game
+  bad_request("game not found", game_id: game_id) unless game
   unless turn.is_a? Integer and turn >= 0
-    return bad_request("bad turn number", game_id: game_id, turn: turn) 
+    bad_request "bad turn number", game_id: game_id, turn: turn
   end
  
   until game.turns.count >= turn
@@ -77,48 +87,42 @@ end
 
 # Create a player
 post '/players' do
-  return bad_request("missing username") unless params[:username] 
-  return bad_request("missing password") unless params[:password] 
-  return bad_request("missing email") unless params[:email]
+  bad_request "missing username" unless params[:username] 
+  bad_request "missing password" unless params[:password] 
+  bad_request "missing email" unless params[:email]
   
-  return bad_request("player already exists") if Player.where(username: params[:username]).first
+  bad_request "player already exists" if Player.where(username: params[:username]).first
   
-  Player.create username: params[:username], email: params[:email],
-                password: params[:password]
+  Player.create! username: params[:username], email: params[:email],
+                 password: params[:password]
   
   { "success" => "player created" }.to_json
 end  
 
 # Create a new game.
 post '/games' do
-  return bad_request("missing scenario") unless params[:scenario] 
-  return bad_request("missing initial") unless params[:initial] 
-  return bad_request("missing players") unless params[:players] 
-  return bad_request("missing mode") unless params[:mode] 
+  bad_request "missing scenario" unless params[:scenario] 
+  bad_request "missing initial" unless params[:initial] 
+  bad_request "missing players" unless params[:players] 
+  bad_request "missing mode" unless params[:mode] 
   unless SmashAndGrab::VALID_GAME_MODES.include? params[:mode] 
-    return bad_request("invalid mode") 
+    bad_request "invalid mode" 
   end
   
-  # Validate.
-  return bad_request("missing username") unless params[:username] 
-  return bad_request("missing password") unless params[:password] 
-  player = Player.where(username: params[:username]).first
-  return bad_request "bad username or password" unless player 
-  return bad_request "bad username or password" unless player.authenticate params[:password]
+  player = validate_player params 
   
   # Work out which players will be in the game.
   player_names = params[:players].split ";"
   unless player_names.include? player.username
-    return bad_request("username must be one of players")
+    bad_request "username must be one of players"
   end
   players = Player.includes username: player_names # Ensure the order is correct.
-  return bad_request("not all players exist") unless players.size == player_names.size
+  bad_request "not all players exist" unless players.size == player_names.size
   
-  # Create the game.s
-  game = Game.new scenario: params[:scenario], initial: params[:initial],
-                  mode: params[:mode], players: players
-  game.insert
-  
+  # Create the game.
+  game = Game.create! scenario: params[:scenario], initial: params[:initial],
+               mode: params[:mode], players: players
+ 
   { 
       id: game.id, 
       scenario: game.scenario,
@@ -130,27 +134,22 @@ end
 
 # Add a new turn to a game.
 post '/games/:game_id/:turn_number' do |game_id, turn_number|  
-  return bad_request("missing actions") unless params[:actions] 
+  bad_request("missing actions") unless params[:actions] 
   
-  # Validate.
-  return bad_request("missing username") unless params[:username] 
-  return bad_request("missing password") unless params[:password] 
-  player = Player.where(username: params[:username]).first
-  return bad_request "bad username or password" unless player 
-  return bad_request "bad username or password" unless player.authenticate params[:password]
+  validate_player params 
  
   # Check if the game exists.
   game = Game.find(game_id) rescue nil
-  return bad_request("game not found", game_id: game_id) unless game
+  bad_request("game not found", game_id: game_id) unless game
   
   # Accept a turn that hasn't already been uploaded and that is immediately after
   # the last uploaded turn.
   turn_number = turn_number.to_i
   unless game.create_turn? turn_number
-    return bad_request("turn sent out of sequence", game_id: game_id, turn: turn_number) 
+    bad_request "turn sent out of sequence", game_id: game_id, turn: turn_number
   end
   
-  game.turns.create actions: params[:actions]
+  game.turns.create! actions: params[:actions]
   
   # TODO: notify opponent.
 

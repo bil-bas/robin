@@ -51,8 +51,8 @@ describe 'Smash and Grab server' do
   
   describe "get /players/*/games" do
     should "return a list of game ids" do
-      game1 = Game.new(scenario: "x", mode: "pvp", players: Player.all).insert
-      game2 = Game.new(scenario: "y", mode: "coop-baddies", players: Player.all).insert
+      game1 = Game.new(scenario: "x", initial: "s", mode: "pvp", players: Player.all).insert
+      game2 = Game.new(scenario: "y", initial: "s", mode: "coop-baddies", players: Player.all).insert
       game2.turns.create actions: actions
       
       get "/players/fish/games"

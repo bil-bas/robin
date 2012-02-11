@@ -4,4 +4,6 @@ class Turn
 
   field :actions, type: String # List of actions.
   embedded_in :game
+  
+  validates_presence_of :actions
 end
