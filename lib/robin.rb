@@ -4,6 +4,7 @@ require 'json'
 require_relative "robin/settings"
 
 module Robin  
+  # Allow config to be visible from anywhere.
   module Configuration
     class << self
       attr_accessor :config
@@ -29,3 +30,6 @@ end
 
 require_relative "robin/models"
 require_relative "robin/routes"
+
+# TODO: Read CLI arguments more sensibly.
+Robin::Server.run! port: ARGV.find{|x| x.to_i > 0 }.to_i unless Robin::Server.test?
