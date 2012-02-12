@@ -1,3 +1,20 @@
+require 'pony'
+
+Pony.options = {
+    via: :smtp,
+    via_options: {
+        address: 'smtp.gmail.com',
+        port: '587',
+        domain: ENV['GMAIL_SMTP_USER'],
+        user_name: ENV['GMAIL_SMTP_USER'],
+        password: ENV['GMAIL_SMTP_PASSWORD'],
+        authentication: :plain,
+        enable_starttls_auto: true,
+
+    },
+    from: "Smash and Grab",
+}
+
 class Player
   include Mongoid::Document
   include Mongoid::Timestamps
@@ -29,5 +46,20 @@ class Player
       player = where(username: username).first
       player and player.try(:authenticate, password)
     end
+  end
+  
+  def send_mail(subject, message)
+    Pony.mail to: email, subject: subject,
+              body: <<END
+Hi #{username},
+
+#{message}
+
+--- The Smash and Grab server
+
+----------------------------
+
+This is an automated message; please do not reply!
+END
   end
 end

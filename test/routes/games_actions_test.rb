@@ -130,7 +130,11 @@ describe "/games route" do
       game.complete?.should.equal false            
     end
     
-    should "succeed and advance the turn if :end_turn sent" do     
+    should "succeed and advance the turn if :end_turn sent" do
+      any_instance_of Player do |player|
+        mock(player).send_mail "fish ended the turn", "fish has finished playing turn #1 on your Smash and Grab game."
+      end
+    
       authorize 'fish', 'abcdefg'
       post "/games/#{@game.id}/actions", action_data.merge(end_turn: true)
       
@@ -143,7 +147,11 @@ describe "/games route" do
       game.complete?.should.equal false      
     end
     
-    should "succeed and complete the game if :end_gane sent" do      
+    should "succeed and complete the game if :end_game sent" do
+      any_instance_of Player do |player|
+        mock(player).send_mail "fish ended the turn", "fish has finished playing turn #1 on your Smash and Grab game, which has also completed the game."
+      end
+      
       authorize 'fish', 'abcdefg'
       post "/games/#{@game.id}/actions", action_data.merge(end_game: true)
       

@@ -4,6 +4,7 @@ gem 'sinatra', '~> 1.3.2'
 gem 'mongoid', '~> 2.4.3'
 gem 'bson_ext', '~> 1.5.2'
 gem 'bcrypt-ruby', '~> 3.0.1'
+gem 'pony', '~> 1.4'
 
 group :production do
   # Not needed for testing and EventMachine doesn't work on Windows anyway.

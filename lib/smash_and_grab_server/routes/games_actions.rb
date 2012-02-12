@@ -35,21 +35,29 @@ class TurnServer < Sinatra::Base
     action = game.actions.create data: params[:data]
     bad_request "failed to create action" unless action.persisted?
     
+    # Work out the message to return to the player.
     message = if params[:end_game]
                 # Close off the game if the action ended the game.
                 game.complete = true
                 game.update   
-                # TODO: notify opponent via email and/or in next request?
                 "game completed"
               elsif params[:end_turn]   
                 # Advance to new turn if the action ended the turn. 
                 game.turn += 1
-                game.update    
-                # TODO: notify opponent via email and/or in next request?
+                game.update
                 "turn advanced"
               else 
                 "action accepted"
               end
+              
+    # Send an email update.
+    if params[:end_turn] or params[:end_game]
+      turn_number = (game.turn.fdiv game.players.size).floor + 1
+      (game.players - [player]).each do |opponent|
+        opponent.send_mail "#{player.username} ended the turn",
+              "#{player.username} has finished playing turn ##{turn_number} on your Smash and Grab game#{params[:end_game] ? ", which has also completed the game" : ""}."
+      end
+    end
     
     { success: message }.to_json 
   end
