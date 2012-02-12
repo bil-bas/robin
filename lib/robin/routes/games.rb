@@ -38,6 +38,16 @@ class Server < Sinatra::Base
     game = Models::Game.create map: map, mode: params[:mode], players: players
     
     bad_request "failed to create game" unless game.persisted?
+    
+    (players - [player]).each do |opponent|
+      opponent.send_mail "Challenge from #{player.username}", <<END
+#{player.username} has challenged you to a game of #{config[:game, :name]}!
+
+Players: #{game.players.map(&:username).join(", ")}
+Map: #{game.map.name}
+Mode: #{game.mode}
+END
+    end
    
     { 
       success: "game created",

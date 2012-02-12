@@ -36,7 +36,17 @@ describe "/games route" do
   
   # POST /games
   describe "POST /games" do   
-    should "create a new game and return a new id" do   
+    should "create a new game and return a new id" do  
+      any_instance_of Robin::Models::Player do |player|
+        mock(player).send_mail "Challenge from fish", <<END
+fish has challenged you to a game of Smash and Grab!
+
+Players: fish, frog
+Map: My Map
+Mode: coop-baddies
+END
+      end
+      
       authorize 'fish', 'abcdefg'
       post '/games', initial_game_data.merge(map_id: @map.id)
       
