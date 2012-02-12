@@ -2,15 +2,15 @@ require 'digest/md5'
 require 'zlib'
 
 # A map contains the data for an uploaded map, which can be used to create games.
-class Map
-  include Mongoid::Document
+module Robin::Models
+class Map < Base
   include Mongoid::Timestamps
   
   field :name, type: String
   field :data_compressed, type: BSON::Binary
   field :data_digest, type: String
-  has_many :games
-  belongs_to :uploader, class_name: "Player", inverse_of: :uploaded_maps
+  has_many :games, class_name: "Robin::Models::Game"
+  belongs_to :uploader, class_name: "Robin::Models::Player", inverse_of: :uploaded_maps
    
   validates_presence_of :name
   
@@ -32,4 +32,5 @@ class Map
   def data
     Zlib::Inflate.inflate data_compressed.to_s
   end
+end
 end

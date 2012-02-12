@@ -1,13 +1,13 @@
-class Game
-  include Mongoid::Document
+module Robin::Models
+class Game < Base
   include Mongoid::Timestamps
   
-  field :mode, type: String
-  field :turn, type: Integer, default: 0
+  field :mode, type: String, default: config[:game, :default_mode]
+  field :turn, type: Integer, default: 0 # Number of player turns completed (not rounds).
   field :complete, type: Boolean, default: false
-  has_and_belongs_to_many :players # Well, 2 :)
-  embeds_many :actions
-  belongs_to :map
+  has_and_belongs_to_many :players, class_name: "Robin::Models::Player"
+  embeds_many :actions, class_name: "Robin::Models::Action"
+  belongs_to :map, class_name: "Robin::Models::Map"
   
   validates_presence_of :players
   validates_presence_of :map
@@ -26,4 +26,5 @@ class Game
         complete: complete?,
     }
   end
+end
 end

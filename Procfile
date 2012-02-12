@@ -1,1 +1,1 @@
-web: bundle exec ruby lib/smash_and_grab_server.rb -p $PORT
+web: bundle exec ruby lib/robin.rb -p $PORT

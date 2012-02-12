@@ -4,7 +4,7 @@ require_relative 'helpers/helper'
 describe "/games route" do  
   before do
     create_players
-    @map = Map.create! name: "My Map", data: "xyz", 
+    @map = Robin::Models::Map.create! name: "My Map", data: "xyz", 
                        uploader: @player1
   end
   after { clean_database }
@@ -12,10 +12,10 @@ describe "/games route" do
   # GET /games/*
   describe "GET /games/*" do
     before do
-      actions = 3.times.map {|i| Action.new data: i.to_s }
+      actions = 3.times.map {|i| Robin::Models::Action.new data: i.to_s }
 
-      @game = Game.create! map: @map, mode: "pvp",
-                           players: Player.all, actions: actions    
+      @game = Robin::Models::Game.create! map: @map, mode: "pvp",
+                           players: Robin::Models::Player.all, actions: actions    
     end
     
     should "return the game and all actions by default" do
@@ -45,7 +45,7 @@ describe "/games route" do
       body.size.should.equal 2
       body['success'].should.equal "game created"      
       body['id'].should.match ID_PATTERN
-      Game.find(body['id']).actions.count.should.equal 0
+      Robin::Models::Game.find(body['id']).actions.count.should.equal 0
     end
     
     initial_game_data.each_key do |key|    

@@ -1,9 +1,9 @@
 require_relative '../teststrap'
 
-describe Player do
+describe Robin::Models::Player do
   describe "#send_email" do
     should "send email" do
-      player = Player.new username: 'player2', password: 'frog',
+      player = Robin::Models::Player.new username: 'player2', password: 'frog',
           email: 'a@b.co.uk'
       
       mock(Pony).mail to: 'a@b.co.uk', subject: 'hi',

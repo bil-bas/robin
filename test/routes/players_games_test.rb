@@ -4,7 +4,7 @@ require_relative 'helpers/helper'
 describe "/players route" do
   before do
     create_players
-    @map = Map.create! name: "My Map", data: "xyz", 
+    @map = Robin::Models::Map.create! name: "My Map", data: "xyz", 
                        uploader: @player1
   end 
   
@@ -12,11 +12,12 @@ describe "/players route" do
   
   describe "GET /players/*/games" do
     should "return a list of game summaries" do
-      game1 = Game.create! map: @map, mode: "pvp",
-                           players: Player.all
-      game2 = Game.create! map: @map, mode: "coop-baddies",
-             players: Player.all, turn: 2, complete: true,
-             actions: [Action.new(data: action_data)]
+      game1 = Robin::Models::Game.create! map: @map, mode: "pvp",
+                           players: Robin::Models::Player.all
+      game2 = Robin::Models::Game.create! map: @map, mode: "coop-baddies",
+             players: Robin::Models::Player.all,
+             turn: 2, complete: true,
+             actions: [Robin::Models::Action.new(data: action_data)]
       
       authorize 'fish', 'abcdefg'
       get "/players/fish/games"

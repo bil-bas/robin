@@ -2,3 +2,5 @@ heroku_env.rb
 data
 .bundle
 .dbshell
+.yardoc
+doc

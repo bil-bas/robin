@@ -1,32 +1,32 @@
 require 'pony'
 
-Pony.options = {
-    via: :smtp,
-    via_options: {
-        address: 'smtp.gmail.com',
-        port: '587',
-        domain: ENV['GMAIL_SMTP_USER'],
-        user_name: ENV['GMAIL_SMTP_USER'],
-        password: ENV['GMAIL_SMTP_PASSWORD'],
-        authentication: :plain,
-        enable_starttls_auto: true,
-
-    },
-    from: "Smash and Grab",
-}
-
-class Player
-  include Mongoid::Document
+module Robin::Models
+class Player < Base
   include Mongoid::Timestamps
   include ActiveModel::SecurePassword
+  
+  Pony.options = {
+    via: config[:email, :via],
+    via_options: {
+        address: config[:email, :via_options, :address],
+        port: config[:email, :via_options, :port],
+        domain: config[:email, :via_options, :domain],
+        user_name: config[:email, :via_options, :user_name],
+        password: config[:email, :via_options, :password],
+        authentication: config[:email, :via_options, :authentication],
+        enable_starttls_auto: config[:email, :via_options, :enable_starttls_auto],
+
+    },
+    from: config[:email, :from],
+  }
   
   #SEED_CHARS = ("a".."z").to_a + ("A".."Z").to_a + ("0".."9").to_a + [".", "/"]
   
   field :username, type: String # Should be an index. 
   field :password_digest, type: String
   field :email, type: String
-  has_and_belongs_to_many :games
-  has_many :uploaded_maps, class_name: "Map", inverse_of: :uploader
+  has_and_belongs_to_many :games, class_name: "Robin::Models::Game"
+  has_many :uploaded_maps, class_name: "Robin::Models::Map", inverse_of: :uploader
   
   index :username, :unique  
   validates_presence_of :username
@@ -55,11 +55,12 @@ Hi #{username},
 
 #{message}
 
---- The Smash and Grab server
+--- The #{config[:game, :name]} server
 
 ----------------------------
 
 This is an automated message; please do not reply!
 END
   end
+end
 end

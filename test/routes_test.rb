@@ -9,7 +9,7 @@ describe '/ routes' do
     should "give information about the server" do
       get '/'
       last_response.content_type.should.equal JSON_TYPE
-      body.should.equal "name" => "Smash and Grab server", "version" => "0.0.1alpha"
+      body.should.equal "name" => "Smash and Grab", "version" => "0.0.6alpha"
     end
   end
   
@@ -33,9 +33,8 @@ describe '/ routes' do
      should "handle server error (500)" do
        # Need to check in production environment, otherwise it 
        # will just  exceptions for you.
-       app.set :environment, :production
-             
-       mock(Player).authenticate('x', 'y') { raise "Oh bugger!" }
+       app.set :environment, :production      
+       mock(Robin::Models::Player).authenticate('x', 'y') { raise "Oh bugger!" }
        authorize 'x', 'y'    
        get '/maps'
        

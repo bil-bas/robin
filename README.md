@@ -1,12 +1,11 @@
-Smash and Grab Server
-=====================
+Robin
+=====
 
-Central server for the game [Smash and Grab](http://spooner.github.com/games/smash_and_grab)
+Central server for turn-based games, such as [Smash and Grab](http://spooner.github.com/games/smash_and_grab)
 
 * Author: Spooner (Bil Bas) bil.bagpuss@gmail.com
 * License: [MIT](http://www.opensource.org/licenses/mit-license.php)
-* Website: [Smash and Grab](http://spooner.github.com/games/smash_and_grab)
-* Github: [Spooner/smash_and_grab_server](https://github.com/Spooner/smash_and_grab_server)
+* Github: [Spooner/robin](https://github.com/Spooner/robin)
 
 RESTful Routes
 --------------

@@ -1,10 +1,11 @@
-class TurnServer < Sinatra::Base 
+module Robin
+class Server < Sinatra::Base
   # List maps.
   get "/maps" do
     player = validate_for_access :any_player
     
     {
-        maps: Map.all.map(&:id),
+        maps: Models::Map.all.map(&:id),
     }.to_json
   end
   
@@ -12,7 +13,7 @@ class TurnServer < Sinatra::Base
   get %r{/maps/#{ID_PATTERN}} do |game_id|
     player = validate_for_access :any_player
     
-    map = Map.find(game_id) rescue nil
+    map = Models::Map.find(game_id) rescue nil
     bad_request "no such map" unless map
     
     {
@@ -27,7 +28,7 @@ class TurnServer < Sinatra::Base
     bad_request "missing name" unless params[:name]
     bad_request "missing data" unless params[:data]
             
-    map = Map.create name: params[:name], data: params[:data], 
+    map = Models::Map.create name: params[:name], data: params[:data], 
                      uploader: player
                       
     bad_request "map already uploaded" unless map.persisted?
@@ -37,5 +38,6 @@ class TurnServer < Sinatra::Base
         id: map.id,
     }.to_json
   end 
+end
 end
   

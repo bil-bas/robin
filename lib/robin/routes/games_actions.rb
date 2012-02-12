@@ -1,11 +1,12 @@
-class TurnServer < Sinatra::Base
+module Robin
+class Server < Sinatra::Base
   # Get actions for a game. Defaults to all actions, but can define :from
   get %r{/games/#{ID_PATTERN}/actions} do |game_id|
     validate_for_access :any_player
     
     from = params[:from].to_i # May be nil, which becomes 0
    
-    game = Game.find(game_id) rescue nil 
+    game = Models::Game.find(game_id) rescue nil 
     bad_request "game not found" unless game
     
     bad_request "bad action number" if from < 0
@@ -20,7 +21,7 @@ class TurnServer < Sinatra::Base
     bad_request "missing data" unless params[:data] 
    
     # Check if the game exists.
-    game = Game.find(game_id) rescue nil
+    game = Models::Game.find(game_id) rescue nil
     bad_request "game not found" unless game
 
     # Check if the player validated is actually one of the players.
@@ -55,12 +56,13 @@ class TurnServer < Sinatra::Base
       turn_number = (game.turn.fdiv game.players.size).floor + 1
       (game.players - [player]).each do |opponent|
         opponent.send_mail "#{player.username} ended the turn",
-              "#{player.username} has finished playing turn ##{turn_number} on your Smash and Grab game#{params[:end_game] ? ", which has also completed the game" : ""}."
+              "#{player.username} has finished playing turn ##{turn_number} on your #{config[:game, :name]} game#{params[:end_game] ? ", which has also completed the game" : ""}."
       end
     end
     
     { success: message }.to_json 
   end
+end
 end
 
 

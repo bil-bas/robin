@@ -1,0 +1,31 @@
+---
+
+# MY_VARIABLE will get replaced with the value from ENV.
+
+administrators:
+  - spooner
+  
+game: 
+  name: Smash and Grab
+  version: 0.0.6alpha
+  modes:
+    - coop-baddies
+    - coop-goodies
+    - pvp
+  default_mode: pvp
+  
+database:
+  uri: MONGOLAB_URI
+  # name: my_database
+  
+email:
+  from: Smash and Grab
+  via: smtp
+  via_options:
+    smtp_address: smtp.gmail.com
+    smtp_port: 587
+    domain: GMAIL_SMTP_USER
+    user_name: GMAIL_SMTP_USER
+    password: GMAIL_SMTP_PASSWORD
+    authentication: :plain
+    enable_starttls_auto: true

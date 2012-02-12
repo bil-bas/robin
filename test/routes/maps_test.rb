@@ -5,10 +5,10 @@ describe "/players route" do
   before do
     create_players
     
-    @map1 = Map.create! name: "My Map", data: "xyz", 
+    @map1 = Robin::Models::Map.create! name: "My Map", data: "xyz", 
                         uploader: @player1
                        
-    @map2 = Map.create! name: "My other map", data: "abc", 
+    @map2 = Robin::Models::Map.create! name: "My other map", data: "abc", 
                         uploader: @player2
   end
   
@@ -22,7 +22,7 @@ describe "/players route" do
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE  
       body.should.equal "maps" => [@map1.id.to_s, @map2.id.to_s]
-      Map.count.should.equal 2
+      Robin::Models::Map.count.should.equal 2
     end 
   end
   
@@ -34,8 +34,8 @@ describe "/players route" do
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE       
       body.should.equal "success" => "map uploaded",
-                        "id" => Map.last.id.to_s
-      Map.count.should.equal 3
+                        "id" => Robin::Models::Map.last.id.to_s
+      Robin::Models::Map.count.should.equal 3
     end
     
     should "fail if the map has already been uploaded" do
@@ -45,7 +45,7 @@ describe "/players route" do
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE    
       body.should.equal "error" => "map already uploaded"
-      Map.count.should.equal 2
+      Robin::Models::Map.count.should.equal 2
     end 
   end
 end

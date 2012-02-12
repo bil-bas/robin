@@ -1,6 +1,9 @@
 require 'sinatra/base'
 
-class TurnServer < Sinatra::Base
+module Robin
+class Server < Sinatra::Base
+  include Configuration
+  
   ID_PATTERN = "([a-f0-9]{24})"
   PLAYER_NAME_PATTERN = "([a-zA-Z][a-zA-Z0-9]+)"
   
@@ -27,9 +30,10 @@ class TurnServer < Sinatra::Base
       username, password = @auth.credentials
       case access
         when :admin
-          username == 'admin' and Player.authenticate(username, password)
+          config[:administrators].include?(username) and
+              Models::Player.authenticate(username, password)
         when :any_player
-          Player.authenticate username, password
+          Models::Player.authenticate username, password
       end
     else
       nil
@@ -65,7 +69,10 @@ class TurnServer < Sinatra::Base
   # GET /
   get '/' do
     # Information about the server.
-    { name: SmashAndGrab::NAME, version: SmashAndGrab::VERSION }.to_json
+    {
+      name: config[:game, :name],
+      version: config[:game, :version],
+    }.to_json
   end
   
   require_relative "routes/games_actions"
@@ -75,6 +82,7 @@ class TurnServer < Sinatra::Base
   require_relative "routes/maps"
   
   run! unless test?
+end
 end
 
 

@@ -4,17 +4,17 @@ require_relative 'helpers/helper'
 describe "/games route" do  
   before do
     create_players 
-    @map = Map.create! name: "My Map", data: "xyz", 
-                       uploader: @player1  
+    @map = Robin::Models::Map.create! name: "My Map",
+                data: "xyz", uploader: @player1  
   end
   after { clean_database }
   
   # GET /games/*/actions  
   describe "GET /games/*/actions" do
     before do
-      actions = 3.times.map {|i| Action.new data: i.to_s }
-      @game = Game.create! map: @map, mode: "pvp",
-                           players: Player.all, actions: actions     
+      actions = 3.times.map {|i| Robin::Models::Action.new data: i.to_s }
+      @game = Robin::Models::Game.create! map: @map, mode: "pvp",
+                           players: Robin::Models::Player.all, actions: actions     
     end
     
     should "return all the actions by default" do
@@ -53,7 +53,7 @@ describe "/games route" do
   # POST /games/*/actions 
   describe "POST /games/*/actions" do
     before do     
-      @game = Game.create! map: @map, mode: "pvp", players: Player.all
+      @game = Robin::Models::Game.create! map: @map, mode: "pvp", players: Robin::Models::Player.all
     end
     
     action_data.each_key do |key|    
@@ -66,7 +66,7 @@ describe "/games route" do
         last_response.should.not.be.ok
         last_response.content_type.should.equal JSON_TYPE 
         body.should.equal "error" => "missing #{key}"
-        game = Game.find @game.id   
+        game = Robin::Models::Game.find @game.id   
         game.actions.count.should.equal 0  
         game.turn.should.equal 0
         game.complete?.should.equal false
@@ -80,28 +80,28 @@ describe "/games route" do
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
       body.should.equal "error" => "game not found"
-      game = Game.find @game.id   
+      game = Robin::Models::Game.find @game.id   
       game.actions.count.should.equal 0  
       game.turn.should.equal 0
       game.complete?.should.equal false
     end  
     
     should "fail if trying to submit an action in wrong turn" do 
-      data = action_data.merge username: Player.all[1].username
+      data = action_data.merge username: Robin::Models::Player.all[1].username
       authorize 'frog', 'abcdefg'
       post "/games/#{@game.id}/actions", data
       
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
       body.should.equal "error" => "action sent out of sequence"
-      game = Game.find @game.id                     
+      game = Robin::Models::Game.find @game.id                   
       game.actions.count.should.equal 0  
       game.turn.should.equal 0
       game.complete?.should.equal false 
     end
     
     should "fail if trying to submit to a game you aren't in" do
-      player3 = Player.create! username: "cheeseman", email: "x@z.c",
+      player3 = Robin::Models::Player.create! username: "cheeseman", email: "x@z.c",
                               password: "abcdefg"    
                               
       data = action_data.merge username: player3.username
@@ -111,7 +111,7 @@ describe "/games route" do
       last_response.should.not.be.ok
       last_response.content_type.should.equal JSON_TYPE 
       body.should.equal "error" => "player not in game"
-      game = Game.find @game.id                  
+      game = Robin::Models::Game.find @game.id                  
       game.actions.count.should.equal 0  
       game.turn.should.equal 0
       game.complete?.should.equal false 
@@ -124,14 +124,14 @@ describe "/games route" do
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE 
       body.should.equal "success" => "action accepted"
-      game = Game.find @game.id
+      game = Robin::Models::Game.find @game.id
       game.actions.count.should.equal 1
       game.turn.should.equal 0 
       game.complete?.should.equal false            
     end
     
     should "succeed and advance the turn if :end_turn sent" do
-      any_instance_of Player do |player|
+      any_instance_of Robin::Models::Player do |player|
         mock(player).send_mail "fish ended the turn", "fish has finished playing turn #1 on your Smash and Grab game."
       end
     
@@ -141,14 +141,14 @@ describe "/games route" do
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE 
       body.should.equal "success" => "turn advanced"
-      game = Game.find @game.id
+      game = Robin::Models::Game.find @game.id
       game.actions.count.should.equal 1
       game.turn.should.equal 1  
       game.complete?.should.equal false      
     end
     
     should "succeed and complete the game if :end_game sent" do
-      any_instance_of Player do |player|
+      any_instance_of Robin::Models::Player do |player|
         mock(player).send_mail "fish ended the turn", "fish has finished playing turn #1 on your Smash and Grab game, which has also completed the game."
       end
       
@@ -158,7 +158,7 @@ describe "/games route" do
       last_response.should.be.ok
       last_response.content_type.should.equal JSON_TYPE 
       body.should.equal "success" => "game completed"
-      game = Game.find @game.id
+      game = Robin::Models::Game.find @game.id
       game.actions.count.should.equal 1
       game.turn.should.equal 0
       game.complete?.should.equal true      
